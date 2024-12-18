@@ -2,13 +2,7 @@ import torch
 import torch.nn as nn
 import sys 
 sys.path.append("..")
-import os
-import torch.nn.functional as F
 import numpy as np
-import matplotlib.pyplot as plt
-from matplotlib import cm
-from PIL import Image
-import clip
 from prompts.imagenet_template import openai_imagenet_template
 
 from mmseg.models.segmentors import BaseSegmentor
@@ -16,11 +10,9 @@ from mmseg.models.data_preprocessor import SegDataPreProcessor
 from mmengine.structures import PixelData
 
 from mmseg.registry import MODELS
-
 from pamr import PAMR
 
-import numpy as np
-import matplotlib.pyplot as plt
+from torchvision.transforms import Compose, Normalize
 
 def color_map(N=256, normalized=False):
     def bitget(byteval, idx):
@@ -43,10 +35,10 @@ def color_map(N=256, normalized=False):
     return cmap
 
 @MODELS.register_module()
-class CLIPForSegmentation(BaseSegmentor):
-    def __init__(self, clip_path, name_path, device=torch.device('cuda'),
+class CLIPForSegmentationCLIP(BaseSegmentor):
+    def __init__(self, name_path, device=torch.device('cuda'),
                     pamr_steps=0, pamr_stride=(8, 16), prob_thd=0.0, logit_scale=40, 
-                    slide_stride=112, slide_crop=224, area_thd=None, net = None):
+                    slide_stride=112, slide_crop=224, area_thd=None, net = None, tokenizer = None):
         
         data_preprocessor = SegDataPreProcessor(
             mean=[122.771, 116.746, 104.094],
@@ -54,6 +46,16 @@ class CLIPForSegmentation(BaseSegmentor):
             rgb_to_bgr=True)
         super().__init__(data_preprocessor=data_preprocessor)
         self.net = net
+        self.tokenizer = self.net.tokenizer
+
+        for i in range(len(self.net.preprocess.transforms)):
+            if isinstance(self.net.preprocess.transforms[i], Normalize):
+                mean = np.array(self.net.preprocess.transforms[i].mean)*255
+                std = np.array(self.net.preprocess.transforms[i].std)*255
+                break
+        self.image_preprocess = Compose([
+            Normalize(mean=mean ,  std=std),  # Normalizes the image
+        ])
         
         query_words, self.query_idx = get_cls_idx(name_path)
         self.num_queries = len(query_words)
@@ -63,15 +65,14 @@ class CLIPForSegmentation(BaseSegmentor):
         query_features = []
         with torch.no_grad():
             for qw in query_words:
-                query = clip.tokenize([temp(qw) for temp in openai_imagenet_template]).to(device)
+                query = self.tokenizer([temp(qw) for temp in openai_imagenet_template]).to(device)
                 feature = self.net.encode_text(query)
 
                 feature /= feature.norm(dim=-1, keepdim=True)
                 feature = feature.mean(dim=0)
                 feature /= feature.norm()
                 query_features.append(feature.unsqueeze(0))
-        self.query_features = torch.cat(query_features, dim=0).to(torch.float32)
-        
+        self.query_features = torch.cat(query_features, dim=0)
         
         self.dtype = self.query_features.dtype
         self.logit_scale = logit_scale
@@ -89,17 +90,15 @@ class CLIPForSegmentation(BaseSegmentor):
     def forward_feature(self, img, logit_size=None):
         if type(img) == list:
             img = img[0]
-
         image_features = self.net.encode_image(img, return_all=True, csa=True)
-        #print(image_features.shape) #torch.Size([1, 197, 512])
-        #print(attn_weights.shape) #torch.Size([12, 197, 197])
+        
         
         image_features /= image_features.norm(dim=-1, keepdim=True)
         image_features = image_features[:, 1:]
         logits = image_features @ self.query_features.T
 
         
-        patch_size = self.net.model.patch_embed.proj.kernel_size[0]
+        patch_size = self.net.patch_size
         w, h = img[0].shape[-2] // patch_size, img[0].shape[-1] // patch_size
         out_dim = logits.shape[-1]
         logits = logits.permute(0, 2, 1).reshape(-1, out_dim, w, h)
@@ -129,7 +128,7 @@ class CLIPForSegmentation(BaseSegmentor):
         out_channels = self.num_queries
         h_grids = max(h_img - h_crop + h_stride - 1, 0) // h_stride + 1
         w_grids = max(w_img - w_crop + w_stride - 1, 0) // w_stride + 1
-        preds = img.new_zeros((batch_size, out_channels, h_img, w_img)).to(torch.float32)
+        preds = img.new_zeros((batch_size, out_channels, h_img, w_img)).to(torch.float16)
         count_mat = img.new_zeros((batch_size, 1, h_img, w_img))
 
         scaled_h = h_img //16
