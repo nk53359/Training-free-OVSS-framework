@@ -2,20 +2,17 @@ _base_ = './base_config.py'
 
 # model settings
 model = dict(
-    name_path='./configs/cls_voc21.txt',
-    logit_scale=65,
-    prob_thd=0.1,
-    area_thd=0.1
+    name_path='./configs/proxyclip/cls_ade20k.txt'
 )
 
 # dataset settings
-dataset_type = 'PascalVOCDataset'
-data_root = '/mnt/sata_ssd1/nkombol/datasets/VOCdevkit/VOC2012/'
+dataset_type = 'ADE20KDataset'
+data_root =  '/mnt/sata_ssd1/nkombol/datasets/ade/ADEChallengeData2016/'
 
 test_pipeline = [
     dict(type='LoadImageFromFile'),
-    dict(type='Resize', scale=(2048, 336), keep_ratio=True),
-    dict(type='LoadAnnotations'),
+    dict(type='Resize', scale=(2048, 448), keep_ratio=True),
+    dict(type='LoadAnnotations', reduce_zero_label=True),
     dict(type='PackSegInputs')
 ]
 
@@ -28,6 +25,6 @@ test_dataloader = dict(
         type=dataset_type,
         data_root=data_root,
         data_prefix=dict(
-            img_path='JPEGImages', seg_map_path='SegmentationClass'),
-        ann_file='ImageSets/Segmentation/val.txt',
+            img_path='images/validation',
+            seg_map_path='annotations/validation'),
         pipeline=test_pipeline))

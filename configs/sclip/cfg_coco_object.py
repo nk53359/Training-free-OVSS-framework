@@ -2,7 +2,7 @@ _base_ = './base_config.py'
 
 # model settings
 model = dict(
-    name_path='./configs/cls_coco_object.txt',
+    name_path='./configs/sclip/cls_coco_object.txt',
     logit_scale=50,
     prob_thd=0.1
 )

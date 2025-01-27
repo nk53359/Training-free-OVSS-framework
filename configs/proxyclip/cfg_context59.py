@@ -1,15 +1,13 @@
-_base_ = '/home/nkombol/Open Vocabulary Baseline/configs/base_config.py'
+_base_ = './base_config.py'
 
 # model settings
 model = dict(
-    name_path='/home/nkombol/Open Vocabulary Baseline/configs/cls_ade20k.txt'
+    name_path='./configs/proxyclip/cls_context59.txt'
 )
 
-
-
 # dataset settings
-dataset_type = 'ADE20KDataset'
-data_root = '/mnt/sata_ssd1/nkombol/datasets/ade/ADEChallengeData2016/'
+dataset_type = 'PascalContext59Dataset'
+data_root = ''
 
 test_pipeline = [
     dict(type='LoadImageFromFile'),
@@ -27,6 +25,6 @@ test_dataloader = dict(
         type=dataset_type,
         data_root=data_root,
         data_prefix=dict(
-            img_path='images/validation',
-            seg_map_path='annotations/validation'),
+            img_path='JPEGImages', seg_map_path='SegmentationClassContext'),
+        ann_file='ImageSets/SegmentationContext/val.txt',
         pipeline=test_pipeline))

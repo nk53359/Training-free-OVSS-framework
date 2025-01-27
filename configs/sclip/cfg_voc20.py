@@ -2,16 +2,16 @@ _base_ = './base_config.py'
 
 # model settings
 model = dict(
-    name_path='./configs/cls_coco_stuff.txt'
+    name_path='./configs/sclip/cls_voc20.txt'
 )
 
 # dataset settings
-dataset_type = 'COCOStuffDataset'
-data_root = ''
+dataset_type = 'PascalVOC20Dataset'
+data_root = '/mnt/sata_ssd1/nkombol/datasets/VOCdevkit/VOC2012/'
 
 test_pipeline = [
     dict(type='LoadImageFromFile'),
-    dict(type='Resize', scale=(2048, 448), keep_ratio=True),
+    dict(type='Resize', scale=(2048, 336), keep_ratio=True),
     dict(type='LoadAnnotations'),
     dict(type='PackSegInputs')
 ]
@@ -25,5 +25,6 @@ test_dataloader = dict(
         type=dataset_type,
         data_root=data_root,
         data_prefix=dict(
-            img_path='images/val2017', seg_map_path='annotations/val2017'),
+            img_path='JPEGImages', seg_map_path='SegmentationClass'),
+        ann_file='ImageSets/Segmentation/val.txt',
         pipeline=test_pipeline))

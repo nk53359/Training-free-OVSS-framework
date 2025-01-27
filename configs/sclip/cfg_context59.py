@@ -2,17 +2,17 @@ _base_ = './base_config.py'
 
 # model settings
 model = dict(
-    name_path='./configs/cls_voc20.txt'
+    name_path='./configs/sclip/cls_context59.txt'
 )
 
 # dataset settings
-dataset_type = 'PascalVOC20Dataset'
-data_root = ''
+dataset_type = 'PascalContext59Dataset'
+data_root = '/mnt/sata_ssd1/nkombol/datasets/VOCdevkit/VOC2010/'
 
 test_pipeline = [
     dict(type='LoadImageFromFile'),
     dict(type='Resize', scale=(2048, 336), keep_ratio=True),
-    dict(type='LoadAnnotations'),
+    dict(type='LoadAnnotations', reduce_zero_label=True),
     dict(type='PackSegInputs')
 ]
 
@@ -25,6 +25,6 @@ test_dataloader = dict(
         type=dataset_type,
         data_root=data_root,
         data_prefix=dict(
-            img_path='JPEGImages', seg_map_path='SegmentationClass'),
-        ann_file='ImageSets/Segmentation/val.txt',
+            img_path='JPEGImages', seg_map_path='SegmentationClassContext'),
+        ann_file='ImageSets/SegmentationContext/val.txt',
         pipeline=test_pipeline))

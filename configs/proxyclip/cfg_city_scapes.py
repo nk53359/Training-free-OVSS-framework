@@ -2,7 +2,9 @@ _base_ = './base_config.py'
 
 # model settings
 model = dict(
-    name_path='./configs/cls_city_scapes.txt'
+    name_path='./configs/proxyclip/cls_city_scapes.txt',
+    slide_stride=112,
+    slide_crop=224
 )
 
 # dataset settings
@@ -11,7 +13,7 @@ data_root = '/mnt/sata_ssd1/nkombol/datasets/cityscapes/'
 
 test_pipeline = [
     dict(type='LoadImageFromFile'),
-    dict(type='Resize', scale=(2048, 560), keep_ratio=True),
+    dict(type='Resize', scale=(2048, 448), keep_ratio=True),
     # add loading annotation after ``Resize`` because ground truth
     # does not need to do resize data transform
     dict(type='LoadAnnotations'),
