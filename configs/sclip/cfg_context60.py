@@ -2,14 +2,14 @@ _base_ = './base_config.py'
 
 # model settings
 model = dict(
-    name_path='./configs/cls_context60.txt',
+    name_path='./configs/sclip/cls_context60.txt',
     logit_scale=50,
     prob_thd=0.1
 )
 
 # dataset settings
 dataset_type = 'PascalContext60Dataset'
-data_root = ''
+data_root = '/mnt/sata_ssd1/nkombol/datasets/VOCdevkit/VOC2010/'
 
 test_pipeline = [
     dict(type='LoadImageFromFile'),

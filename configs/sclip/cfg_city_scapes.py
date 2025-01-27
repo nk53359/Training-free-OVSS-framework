@@ -2,17 +2,19 @@ _base_ = './base_config.py'
 
 # model settings
 model = dict(
-    name_path='./configs/cls_context59.txt'
+    name_path='./configs/sclip/cls_city_scapes.txt'
 )
 
 # dataset settings
-dataset_type = 'PascalContext59Dataset'
-data_root = ''
+dataset_type = 'CityscapesDataset'
+data_root = '/mnt/sata_ssd1/nkombol/datasets/cityscapes/'
 
 test_pipeline = [
     dict(type='LoadImageFromFile'),
-    dict(type='Resize', scale=(2048, 336), keep_ratio=True),
-    dict(type='LoadAnnotations', reduce_zero_label=True),
+    dict(type='Resize', scale=(2048, 560), keep_ratio=True),
+    # add loading annotation after ``Resize`` because ground truth
+    # does not need to do resize data transform
+    dict(type='LoadAnnotations'),
     dict(type='PackSegInputs')
 ]
 
@@ -25,6 +27,5 @@ test_dataloader = dict(
         type=dataset_type,
         data_root=data_root,
         data_prefix=dict(
-            img_path='JPEGImages', seg_map_path='SegmentationClassContext'),
-        ann_file='ImageSets/SegmentationContext/val.txt',
+            img_path='leftImg8bit/val', seg_map_path='gtFine/val'),
         pipeline=test_pipeline))
